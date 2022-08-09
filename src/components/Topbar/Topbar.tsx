@@ -3,23 +3,17 @@ import styles from "./Topbar.module.scss";
 import { API } from "../../consts/api";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { borzoi } from "borzoi";
 
 const fetchLists = async (term: string) => {
-  const response = await fetch(
-    `${API}/list?${new URLSearchParams({
+  const { data, ok } = await borzoi(`${API}/list`, {
+    query: {
       term,
-    })}`
-  );
+    },
+  });
+  if (!ok || !data.data) throw new Error();
 
-  let json = await response.json();
-
-  const data = json?.data;
-  if (!Array.isArray(data)) {
-    return [];
-    // throw new Error();
-  }
-
-  return data;
+  return data.data;
 };
 
 export const Topbar = () => {
@@ -55,8 +49,11 @@ export const Topbar = () => {
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (e.target instanceof Element) {
-        if (!(wrapper instanceof Element)) return;
-        if (e.target.contains(wrapper) || wrapper.contains(e.target)) {
+        if (!wrapper.current) return;
+        if (
+          e.target.contains(wrapper.current) ||
+          wrapper.current.contains(e.target)
+        ) {
           return;
         }
         setFoundLists([]);
@@ -96,8 +93,8 @@ export const Topbar = () => {
               strokeWidth="2"
             >
               <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
+                strokeLinecap="round"
+                strokeLinejoin="round"
                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
               />
             </svg>
@@ -112,7 +109,12 @@ export const Topbar = () => {
             <div className="flex flex-col space-y-1">
               {foundLists.map((list) => (
                 <Link
-                  to={`/list/${list.id}`}
+                  onClick={() => {
+                    setSearching(false);
+                    setFoundLists([]);
+                  }}
+                  key={list.id}
+                  to={`/?listId=${list.id}`}
                   className={classes(
                     styles["results__entry"],
                     "flex items-center space-x-3 flex-row py-2"
@@ -131,9 +133,9 @@ export const Topbar = () => {
             </div>
           )}
           {/* <button class={styles["results__entry"]}>Santa Cruz</button> */}
-          <button className={styles["results__action"]}>
+          <Link to="/add-list" className={styles["results__action"]}>
             Not what you are looking for? Add new list!
-          </button>
+          </Link>
         </div>
       )}
     </div>

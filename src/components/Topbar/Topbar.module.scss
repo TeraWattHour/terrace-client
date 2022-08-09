@@ -27,7 +27,7 @@
   }
 
   &__entry {
-    @apply py-1.5 px-3 hover:bg-stone-100 rounded-lg block w-full text-left transition-all;
+    @apply py-1.5 px-3 hover:bg-stone-100 rounded-lg flex flex-row items-center w-full text-left transition-all;
   }
 
   &__action {

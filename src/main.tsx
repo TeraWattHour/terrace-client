@@ -1,15 +1,16 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./styles/global.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { IndexPage } from "./pages";
+import "./styles/icons/style/all.css";
+
+import { borzoiConfig } from "borzoi";
+import { API } from "./consts/api";
+import App from ".";
+
+borzoiConfig({
+  baseUrl: API,
+});
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<IndexPage />} />
-      </Routes>
-    </BrowserRouter>
-  </React.StrictMode>
+  <App />
 );

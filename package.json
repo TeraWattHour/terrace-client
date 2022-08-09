@@ -9,12 +9,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tanstack/react-query": "^4.0.10",
+    "borzoi": "^0.1.20",
     "leaflet": "^1.8.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-leaflet": "^4.0.1",
     "react-router-dom": "^6.3.0",
-    "sass": "^1.54.3"
+    "sass": "^1.54.3",
+    "zod": "^3.17.10",
+    "zustand": "^4.0.0"
   },
   "devDependencies": {
     "@types/leaflet": "^1.7.11",

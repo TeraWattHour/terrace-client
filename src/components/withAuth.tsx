@@ -8,7 +8,7 @@ export const withAuth = (Component: any) => {
     if (!user && isLoading) {
       return <div></div>;
     }
-    if (!user) {
+    if (!user && !isLoading) {
       return <NotAuthenticated />;
     }
     return <Component {...props} />;

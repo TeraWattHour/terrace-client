@@ -11,7 +11,7 @@ const fetchLists = async (term: string) => {
       term,
     },
   });
-  if (!ok || !data.data) throw new Error();
+  if (!ok || !data?.data) throw new Error();
 
   return data.data;
 };

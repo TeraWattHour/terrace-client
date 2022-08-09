@@ -3,23 +3,12 @@ import { useLocation, useParams } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { borzoi } from "borzoi";
+import { Card } from "@/components/Card";
 import { BottomBar } from "../components/BottomBar";
 import { classes } from "../utils/classes";
 import L from "leaflet";
-
-function useQueryParams() {
-  const { search } = useLocation();
-
-  return useMemo(() => {
-    const params = new URLSearchParams(search);
-    const x = new Map<string, string>([]);
-    params.forEach((v, k) => {
-      x.set(k, v);
-    });
-
-    return x;
-  }, [search]);
-}
+import { MapContainer, Marker, TileLayer } from "react-leaflet";
+import { useQueryParams } from "../hooks/useQueryParams";
 
 const fetchList = async (listId?: string) => {
   if (!listId || !parseInt(listId)) throw new Error();
@@ -40,11 +29,15 @@ const fetchPlace = async (placeId: number | null, listId?: number) => {
   return data.data;
 };
 
-export const IndexPage = () => {
-  const query = useQueryParams();
+type TParams = {
+  listId?: string;
+};
 
-  const { data: list } = useQuery([`list/${query.get("listId")}`], () =>
-    fetchList(query.get("listId"))
+export const IndexPage = () => {
+  const query = useQueryParams<TParams>();
+
+  const { data: list } = useQuery([`list/${query.listId}`], () =>
+    fetchList(query.listId)
   );
 
   const [selectedPlaceId, setSelectedPlaceId] = useState<number | null>(null);
@@ -56,64 +49,12 @@ export const IndexPage = () => {
     fetchPlace(selectedPlaceId, list?.id)
   );
 
-  const [map, setMap] = useState<L.Map | null>(null);
-  const [layerGroup, setLayerGroup] = useState<L.LayerGroup<any> | null>(null);
-
-  let mapContainer: React.RefObject<HTMLDivElement> = useRef(null);
-
   useEffect(() => {
     setSelectedPlaceId(null);
     (async () => {
       await refetchSelectedPlace();
     })();
-  }, [query.get("listId")]);
-
-  useEffect(() => {
-    if (!mapContainer.current) {
-      return;
-    }
-    const container = mapContainer.current;
-    if ((container as any)?._leaflet_id) {
-      return;
-    }
-
-    var m = L.map(mapContainer.current).setView([51, -0.2], 7);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    }).addTo(m);
-    m.addEventListener("click", () => {
-      setSelectedPlaceId(null);
-    });
-
-    const x = L.layerGroup().addTo(m);
-    setMap(m);
-    setLayerGroup(x);
-  }, []);
-
-  useEffect(() => {
-    const m = map;
-    const x = layerGroup;
-    const l = list;
-    if (!m || !x) {
-      return;
-    }
-    x.clearLayers();
-    if (!l?.places) {
-      return;
-    }
-    m.setView([l.places[0].lat, l.places[0].lon], 7);
-
-    for (const place of list.places) {
-      L.marker([place.lat, place.lon], {
-        title: place.name,
-      })
-        .addEventListener("click", () => {
-          setSelectedPlaceId(place.id);
-        })
-        .addTo(x);
-    }
-  }, [map, layerGroup, list]);
+  }, [query.listId]);
 
   return (
     <div className="h-full w-full">
@@ -128,8 +69,8 @@ export const IndexPage = () => {
             </div>
           )}
           {selectedPlace && selectedPlaceId && !isSelectedPlaceLoading && (
-            <div
-              className="rounded-lg shadow-lg bg-center bg-no-repeat bg-cover relative cursor-pointer group"
+            <Card
+              className="bg-center bg-no-repeat bg-cover relative cursor-pointer group"
               onClick={() => {
                 navigator.clipboard.writeText(
                   `${selectedPlace.lat}, ${selectedPlace.lon}`
@@ -145,7 +86,7 @@ export const IndexPage = () => {
               <div
                 className={classes(
                   selectedPlace.bannerUrl ? "bg-opacity-60" : "",
-                  "p-3 bg-white rounded-lg"
+                  "bg-white rounded-lg"
                 )}
               >
                 <div className="flex flex-row space-x-3">
@@ -157,14 +98,16 @@ export const IndexPage = () => {
                     />
                   )}
                   <div className="flex-grow">
-                    <header className="text-xl font-medium">{list.name}</header>
+                    <header className="text-xl font-medium pb-1.5">
+                      {list.name}
+                    </header>
                     <span>{selectedPlace.description}</span>
                   </div>
                 </div>
               </div>
-            </div>
+            </Card>
           )}
-          <div className="bg-white p-3 rounded-lg overflow-hidden shadow-lg">
+          <Card>
             <div className="flex flex-row space-x-3">
               {list.thumbnailUrl && (
                 <img
@@ -175,8 +118,10 @@ export const IndexPage = () => {
               )}
               <div className="flex flex-col justify-between flex-grow">
                 <div>
-                  <header className="text-xl font-medium">{list.name}</header>
-                  <p>{list.description}</p>
+                  <header className="text-xl font-medium pb-1.5">
+                    {list.name}
+                  </header>
+                  <p className="pb-2">{list.description}</p>
                   <div className="mt-2 text-stone-400 font-medium text-sm">
                     <i className="fas fa-user mr-2"></i>
                     {list.userId}
@@ -184,7 +129,7 @@ export const IndexPage = () => {
                 </div>
                 <div className="flex flex-row justify-end space-x-2 mt-3">
                   <a
-                    className="rounded-lg bg-stone-200 py-2 px-4 hover:bg-stone-300 text-stone-500 hover:text-stone-800 transition-all"
+                    className="rounded-lg bg-stone-200 py-3 px-4 hover:bg-stone-300 text-stone-500 hover:text-stone-800 transition-all"
                     href="https://www.youtube.com/watch?v=gW2LtX1217s&t=93s"
                   >
                     I like it!
@@ -192,11 +137,31 @@ export const IndexPage = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </Card>
         </BottomBar>
       )}
 
-      <div ref={mapContainer} className="w-full h-full"></div>
+      <MapContainer
+        className="w-full h-full"
+        center={[list?.places[0].lat || 52, list?.places[0].lon || 0]}
+        zoom={7}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        {list?.places.map((place: TPlace) => (
+          <Marker
+            key={place.id}
+            position={{ lat: place.lat, lng: place.lon }}
+            eventHandlers={{
+              click: () => {
+                setSelectedPlaceId(place.id);
+              },
+            }}
+          />
+        ))}
+      </MapContainer>
     </div>
   );
 };

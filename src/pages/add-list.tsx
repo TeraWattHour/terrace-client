@@ -1,13 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import {
-  CircleMarker,
-  MapContainer,
-  Marker,
-  TileLayer,
-  useMap,
-  useMapEvents,
-} from "react-leaflet";
-import { withAuth } from "../utils/withAuth";
+import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
+import { withAuth } from "../components/withAuth";
 import { z } from "zod";
 import { borzoi } from "borzoi";
 import { useNavigate } from "react-router-dom";

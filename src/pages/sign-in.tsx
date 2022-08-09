@@ -1,5 +1,5 @@
 import React from "react";
-import { withGuest } from "../utils/withGuest";
+import { withGuest } from "../components/withGuest";
 
 const Page = () => {
   return <div>SignInPage</div>;

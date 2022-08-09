@@ -15,7 +15,11 @@ import { useNavigate } from "react-router-dom";
 const isUrl = (test: string) => {
   try {
     new URL(test);
-    return true;
+    // naive af
+    const ext = test.split(".")[test.split(".").length - 1];
+    const allowed = ["png", "jpg", "jpeg", "webp"];
+    if (!allowed.includes(ext)) return false;
+    if (!test.endsWith("")) return true;
   } catch (e) {
     return false;
   }

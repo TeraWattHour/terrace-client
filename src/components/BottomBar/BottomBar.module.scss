@@ -1,0 +1,8 @@
+.wrapper {
+  z-index: 999;
+  @apply bottom-0 left-1/2 transform flex flex-col space-y-2 -translate-x-1/2 max-w-xl fixed w-full p-3;
+}
+
+.container {
+  @apply relative bg-white rounded-xl border shadow-lg overflow-hidden;
+}

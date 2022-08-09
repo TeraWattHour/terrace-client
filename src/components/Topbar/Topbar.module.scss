@@ -1,0 +1,36 @@
+.wrapper {
+  z-index: 10000;
+  @apply top-0 left-1/2 transform -translate-x-1/2 max-w-xl fixed w-full p-3;
+}
+
+.container {
+  @apply relative bg-white rounded-xl border shadow-lg overflow-hidden;
+}
+
+.discover_input {
+  @apply py-3 sm:py-4 px-5 sm:px-6 rounded-lg text-lg sm:text-xl w-full outline-none focus:ring-2 ring-stone-300;
+}
+
+.buttons_container {
+  @apply flex flex-row space-x-3 absolute right-2 top-1/2 transform -translate-y-1/2;
+}
+
+.search_button {
+  @apply bg-white shadow-lg hover:shadow-md transition-all hover:bg-stone-50 shadow-stone-300 p-2 sm:p-3 rounded-full text-stone-600 stroke-[1px] fill-current;
+}
+
+.results {
+  @apply w-full mt-2 bg-white rounded-xl px-2 py-2 flex space-y-1 flex-col border shadow-lg;
+
+  &__empty {
+    @apply text-black min-h-[200px] flex flex-col items-center justify-center rounded-lg bg-stone-100 text-lg;
+  }
+
+  &__entry {
+    @apply py-1.5 px-3 hover:bg-stone-100 rounded-lg block w-full text-left transition-all;
+  }
+
+  &__action {
+    @apply bg-stone-100 py-2 text-stone-600 w-full text-center transition-all hover:bg-stone-200 hover:text-stone-800 rounded-lg;
+  }
+}

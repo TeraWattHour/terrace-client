@@ -10,10 +10,13 @@ import { SignInPage } from "./pages/sign-in";
 import { AddListPage } from "./pages/add-list";
 import React, { useEffect } from "react";
 import { useUserStore } from "./store/UserStore";
+import { useInterfaceStore } from "./store/InterfaceStore";
+import { ScreenLoader } from "./components/ScreenLoader";
 
 const queryClient = new QueryClient();
 export default function App() {
   const { fetchUser } = useUserStore();
+  const { isLoading } = useInterfaceStore();
 
   useEffect(() => {
     fetchUser();
@@ -30,6 +33,7 @@ export default function App() {
           </Routes>
         </BrowserRouter>
       </QueryClientProvider>
+      <ScreenLoader isLoading={isLoading} />
     </React.StrictMode>
   );
 }

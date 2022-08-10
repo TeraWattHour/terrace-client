@@ -2,7 +2,7 @@ import { borzoi } from "borzoi";
 import create from "zustand";
 
 type TUserStore = {
-  user: TUserStore | null;
+  user: TUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   fetchUser: () => Promise<void>;
@@ -35,7 +35,7 @@ export const useUserStore = create<TUserStore>((set) => ({
       isLoading: false,
     }));
   },
-  setUser: (user?: TUserStore) => {
+  setUser: (user?: TUser) => {
     set((state) => ({
       ...state,
       user,

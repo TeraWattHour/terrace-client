@@ -13,6 +13,7 @@ type TList = {
   description: string;
   thumbnail?: string;
   places: TPlace[];
+  userId: string;
 };
 
 type TPlace = {

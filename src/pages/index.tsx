@@ -3,41 +3,29 @@ import { useLocation, useParams } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { borzoi } from "borzoi";
-import { Card } from "@/components/Card";
+import { Card } from "../components/Card";
 import { BottomBar } from "../components/BottomBar";
 import { classes } from "../utils/classes";
-import L from "leaflet";
 import { MapContainer, Marker, TileLayer } from "react-leaflet";
 import { useQueryParams } from "../hooks/useQueryParams";
-
-const fetchList = async (listId?: string) => {
-  if (!listId || !parseInt(listId)) throw new Error();
-
-  const { data, ok } = await borzoi(`/list/${listId}`);
-
-  if (!data?.data || !ok) throw new Error();
-
-  return data.data;
-};
-
-const fetchPlace = async (placeId: number | null, listId?: number) => {
-  if (!placeId || !listId) return null;
-
-  const { data, ok } = await borzoi(`/place/${placeId}`);
-  if (!data?.data || !ok) throw new Error();
-
-  return data.data;
-};
-
-type TParams = {
-  listId?: string;
-};
+import { fetchList, fetchPlace } from "../api/list";
+import { fetchUser } from "../api/user";
+import Tippy from "@tippyjs/react";
+import "tippy.js/dist/tippy.css";
+import { ScreenLoader } from "../components/ScreenLoader";
+import { useInterfaceStore } from "../store/InterfaceStore";
 
 export const IndexPage = () => {
+  const { setLoading } = useInterfaceStore();
   const query = useQueryParams<TParams>();
 
-  const { data: list } = useQuery([`list/${query.listId}`], () =>
-    fetchList(query.listId)
+  const [isCopied, setIsCopied] = useState(false);
+  const { data: list, isLoading: isListLoading } = useQuery<TList>(
+    [`list/${query.listId}`],
+    () => fetchList(query.listId)
+  );
+  const { data: creator } = useQuery<TUser>([`user/${list?.userId}`], () =>
+    fetchUser(list?.userId)
   );
 
   const [selectedPlaceId, setSelectedPlaceId] = useState<number | null>(null);
@@ -45,9 +33,20 @@ export const IndexPage = () => {
     data: selectedPlace,
     isLoading: isSelectedPlaceLoading,
     refetch: refetchSelectedPlace,
-  } = useQuery([`place/${list?.id}/${selectedPlaceId}`], () =>
+  } = useQuery<TPlace>([`place/${list?.id}/${selectedPlaceId}`], () =>
     fetchPlace(selectedPlaceId, list?.id)
   );
+
+  useEffect(() => {
+    console.log("hrere");
+    setLoading("list", isListLoading);
+  }, [isListLoading]);
+
+  useEffect(() => {
+    return () => {
+      setLoading("list", false);
+    };
+  }, []);
 
   useEffect(() => {
     setSelectedPlaceId(null);
@@ -59,87 +58,6 @@ export const IndexPage = () => {
   return (
     <div className="h-full w-full">
       <Topbar />
-      {list && (
-        <BottomBar>
-          {isSelectedPlaceLoading && (
-            <div className="rounded-lg shadow-lg bg-white">
-              <div className="flex items-center justify-center w-full py-10">
-                <i className="fal fa-spinner-third animate-spin text-3xl"></i>
-              </div>
-            </div>
-          )}
-          {selectedPlace && selectedPlaceId && !isSelectedPlaceLoading && (
-            <Card
-              className="bg-center bg-no-repeat bg-cover relative cursor-pointer group"
-              onClick={() => {
-                navigator.clipboard.writeText(
-                  `${selectedPlace.lat}, ${selectedPlace.lon}`
-                );
-              }}
-              style={{
-                backgroundImage: `url(${selectedPlace.bannerUrl})`,
-              }}
-            >
-              <div className="opacity-0 group-hover:opacity-100 transition-all absolute -top-0.5 text-xs px-2 py-0.5 -translate-x-1/2 rounded-sm transform -translate-y-full left-1/2 bg-white font-semibold text-stone-600">
-                Click me to copy location!
-              </div>
-              <div
-                className={classes(
-                  selectedPlace.bannerUrl ? "bg-opacity-60" : "",
-                  "bg-white rounded-lg"
-                )}
-              >
-                <div className="flex flex-row space-x-3">
-                  {selectedPlace.thumbnailUrl && (
-                    <img
-                      src={selectedPlace.thumbnailUrl}
-                      className="w-32 rounded-lg h-32 flex-shrink-0"
-                      alt=""
-                    />
-                  )}
-                  <div className="flex-grow">
-                    <header className="text-xl font-medium pb-1.5">
-                      {list.name}
-                    </header>
-                    <span>{selectedPlace.description}</span>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          )}
-          <Card>
-            <div className="flex flex-row space-x-3">
-              {list.thumbnailUrl && (
-                <img
-                  src={list.thumbnailUrl}
-                  className="w-32 rounded-lg h-32 flex-shrink-0"
-                  alt=""
-                />
-              )}
-              <div className="flex flex-col justify-between flex-grow">
-                <div>
-                  <header className="text-xl font-medium pb-1.5">
-                    {list.name}
-                  </header>
-                  <p className="pb-2">{list.description}</p>
-                  <div className="mt-2 text-stone-400 font-medium text-sm">
-                    <i className="fas fa-user mr-2"></i>
-                    {list.userId}
-                  </div>
-                </div>
-                <div className="flex flex-row justify-end space-x-2 mt-3">
-                  <a
-                    className="rounded-lg bg-stone-200 py-3 px-4 hover:bg-stone-300 text-stone-500 hover:text-stone-800 transition-all"
-                    href="https://www.youtube.com/watch?v=gW2LtX1217s&t=93s"
-                  >
-                    I like it!
-                  </a>
-                </div>
-              </div>
-            </div>
-          </Card>
-        </BottomBar>
-      )}
 
       <MapContainer
         className="w-full h-full"
@@ -162,6 +80,117 @@ export const IndexPage = () => {
           />
         ))}
       </MapContainer>
+      {list && (
+        <BottomBar>
+          {isSelectedPlaceLoading && (
+            <Card>
+              <div className="flex items-center justify-center w-full py-7">
+                <i className="fal fa-wrench animate-spin text-3xl"></i>
+              </div>
+            </Card>
+          )}
+          {!isSelectedPlaceLoading && selectedPlace && selectedPlaceId && (
+            <Card
+              className="bg-center bg-no-repeat bg-cover"
+              style={{
+                backgroundImage: `url(${selectedPlace.banner})`,
+              }}
+            >
+              <div
+                className={classes(
+                  selectedPlace.banner ? "bg-opacity-60" : "",
+                  "bg-white rounded-lg"
+                )}
+              >
+                <div className="flex flex-row space-x-4">
+                  {selectedPlace.thumbnail && (
+                    <img
+                      src={selectedPlace.thumbnail}
+                      className="w-32 rounded-lg h-32 flex-shrink-0"
+                      alt=""
+                    />
+                  )}
+                  <div className="flex-grow">
+                    <header className="text-xl font-medium pb-1.5">
+                      {selectedPlace.name}
+                    </header>
+                    <div className="pb-4">{selectedPlace.description}</div>
+                    <Tippy
+                      hideOnClick={false}
+                      content={
+                        <div>
+                          {!isCopied
+                            ? "Click me to copy!"
+                            : "Copied to clipboard!"}
+                        </div>
+                      }
+                    >
+                      <span
+                        onMouseLeave={() =>
+                          setTimeout(() => {
+                            setIsCopied(false);
+                          }, 2000)
+                        }
+                        onClick={() => {
+                          setIsCopied(true);
+                          navigator.clipboard.writeText(
+                            `${selectedPlace.lat}, ${selectedPlace.lon}`
+                          );
+                        }}
+                        className="text-xs cursor-pointer"
+                      >
+                        <i className="fal fa-location-dot mr-2"></i>
+                        {selectedPlace.lat}, {selectedPlace.lon}
+                      </span>
+                    </Tippy>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+          <Card>
+            <div className="flex flex-row space-x-4">
+              {list.thumbnail && (
+                <img
+                  src={list.thumbnail}
+                  className="w-32 rounded-lg h-32 flex-shrink-0"
+                  alt=""
+                />
+              )}
+              <div className="flex flex-col justify-between flex-grow">
+                <div>
+                  <header className="text-xl font-medium pb-1.5">
+                    {list.name}
+                  </header>
+                  <p className="pb-2">{list.description}</p>
+                  <div className="mt-2 text-stone-400 font-medium text-sm">
+                    {creator ? (
+                      <>
+                        <i className="fas fa-user mr-2"></i>
+                        {creator?.name}
+                      </>
+                    ) : (
+                      <i className="fal fa-wrench animate-spin text-lg"></i>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-row justify-end space-x-2 mt-3">
+                  <a
+                    className="rounded-lg bg-stone-200 py-3 px-4 hover:bg-stone-300 text-stone-500 hover:text-stone-800 transition-all"
+                    href="https://www.youtube.com/watch?v=gW2LtX1217s&t=93s"
+                  >
+                    I like it!
+                  </a>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </BottomBar>
+      )}
     </div>
   );
+};
+
+type TParams = {
+  listId?: string;
 };

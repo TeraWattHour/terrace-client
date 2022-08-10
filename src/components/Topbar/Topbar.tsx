@@ -154,7 +154,7 @@ const ResultsNotFound = () => {
 const ResultsLoading = () => {
   return (
     <div className="flex items-center justify-center w-full py-10">
-      <i className="fal fa-spinner-third animate-spin text-3xl"></i>
+      <i className="fal fa-wrench animate-spin text-3xl"></i>
     </div>
   );
 };

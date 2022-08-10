@@ -1,5 +1,5 @@
 import React, { HtmlHTMLAttributes } from "react";
-import { classes } from "@/utils/classes";
+import { classes } from "../../utils/classes";
 import styles from "./Card.module.scss";
 
 export const Card = React.forwardRef<
@@ -10,7 +10,7 @@ export const Card = React.forwardRef<
     <div
       ref={ref}
       {...props}
-      className={classes(props.className, styles["card"])}
+      className={classes(props.className, styles["card"], "card")}
     >
       {props.children}
     </div>

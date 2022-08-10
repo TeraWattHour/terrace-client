@@ -1,0 +1,7 @@
+.wrapper {
+  z-index: 99999999;
+  @apply fixed w-full h-full top-0 left-0 bg-white bg-opacity-40 flex items-center justify-center;
+  i {
+    @apply text-4xl animate-spin text-gray-800;
+  }
+}

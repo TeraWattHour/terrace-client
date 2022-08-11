@@ -44,8 +44,6 @@ export const Topbar = () => {
     setLoading(false);
   };
 
-  const handleSelectList = () => {};
-
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (e.target instanceof Element) {
@@ -61,10 +59,22 @@ export const Topbar = () => {
         setSearching(false);
       }
     };
+    const handleFocus = (e: KeyboardEvent) => {
+      if (
+        e.key !== "/" ||
+        !searchInput.current ||
+        document.activeElement === searchInput.current
+      )
+        return;
+      e.preventDefault();
+      searchInput.current.focus();
+    };
 
     window.addEventListener("click", handler);
+    window.addEventListener("keydown", handleFocus);
     return () => {
       window.removeEventListener("click", handler);
+      window.removeEventListener("keydown", handleFocus);
     };
   }, []);
 
@@ -132,8 +142,7 @@ export const Topbar = () => {
               ))}
             </div>
           )}
-          {/* <button class={styles["results__entry"]}>Santa Cruz</button> */}
-          <Link to="/add-list" className={styles["results__action"]}>
+          <Link to="/list/add-list" className={styles["results__action"]}>
             Not what you are looking for? Add new list!
           </Link>
         </div>

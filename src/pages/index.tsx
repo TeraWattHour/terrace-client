@@ -1,18 +1,16 @@
 import { Topbar } from "../components/Topbar";
-import { useLocation, useParams } from "react-router-dom";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { borzoi } from "borzoi";
 import { Card } from "../components/Card";
 import { BottomBar } from "../components/BottomBar";
 import { classes } from "../utils/classes";
-import { MapContainer, Marker, TileLayer } from "react-leaflet";
+import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
 import { useQueryParams } from "../hooks/useQueryParams";
 import { fetchList, fetchPlace } from "../api/list";
 import { fetchUser } from "../api/user";
 import Tippy from "@tippyjs/react";
 import "tippy.js/dist/tippy.css";
-import { ScreenLoader } from "../components/ScreenLoader";
 import { useInterfaceStore } from "../store/InterfaceStore";
 
 export const IndexPage = () => {
@@ -38,7 +36,6 @@ export const IndexPage = () => {
   );
 
   useEffect(() => {
-    console.log("hrere");
     setLoading("list", isListLoading);
   }, [isListLoading]);
 
@@ -61,24 +58,10 @@ export const IndexPage = () => {
 
       <MapContainer
         className="w-full h-full"
-        center={[list?.places[0].lat || 52, list?.places[0].lon || 0]}
+        center={[list?.places[0].lat || 52, list?.places[0].lon || -0.2]}
         zoom={7}
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        {list?.places.map((place: TPlace) => (
-          <Marker
-            key={place.id}
-            position={{ lat: place.lat, lng: place.lon }}
-            eventHandlers={{
-              click: () => {
-                setSelectedPlaceId(place.id);
-              },
-            }}
-          />
-        ))}
+        <Map list={list} setSelectedPlaceId={setSelectedPlaceId} />
       </MapContainer>
       {list && (
         <BottomBar>
@@ -91,11 +74,17 @@ export const IndexPage = () => {
           )}
           {!isSelectedPlaceLoading && selectedPlace && selectedPlaceId && (
             <Card
-              className="bg-center bg-no-repeat bg-cover"
+              className="bg-center bg-no-repeat bg-cover relative"
               style={{
                 backgroundImage: `url(${selectedPlace.banner})`,
               }}
             >
+              <button
+                className="absolute top-3 right-4"
+                onClick={() => setSelectedPlaceId(null)}
+              >
+                <i className="fal fa-close text-2xl "></i>
+              </button>
               <div
                 className={classes(
                   selectedPlace.banner ? "bg-opacity-60" : "",
@@ -110,11 +99,13 @@ export const IndexPage = () => {
                       alt=""
                     />
                   )}
-                  <div className="flex-grow">
-                    <header className="text-xl font-medium pb-1.5">
-                      {selectedPlace.name}
-                    </header>
-                    <div className="pb-4">{selectedPlace.description}</div>
+                  <div className="flex-grow flex flex-col justify-between">
+                    <div>
+                      <header className="text-xl font-medium pb-1.5">
+                        {selectedPlace.name}
+                      </header>
+                      <div className="pb-4">{selectedPlace.description}</div>
+                    </div>
                     <Tippy
                       hideOnClick={false}
                       content={
@@ -125,7 +116,7 @@ export const IndexPage = () => {
                         </div>
                       }
                     >
-                      <span
+                      <div
                         onMouseLeave={() =>
                           setTimeout(() => {
                             setIsCopied(false);
@@ -141,7 +132,7 @@ export const IndexPage = () => {
                       >
                         <i className="fal fa-location-dot mr-2"></i>
                         {selectedPlace.lat}, {selectedPlace.lon}
-                      </span>
+                      </div>
                     </Tippy>
                   </div>
                 </div>
@@ -163,24 +154,21 @@ export const IndexPage = () => {
                     {list.name}
                   </header>
                   <p className="pb-2">{list.description}</p>
-                  <div className="mt-2 text-stone-400 font-medium text-sm">
-                    {creator ? (
-                      <>
-                        <i className="fas fa-user mr-2"></i>
-                        {creator?.name}
-                      </>
-                    ) : (
-                      <i className="fal fa-wrench animate-spin text-lg"></i>
-                    )}
-                  </div>
+                  <div className="mt-2 text-sm"></div>
                 </div>
-                <div className="flex flex-row justify-end space-x-2 mt-3">
-                  <a
-                    className="rounded-lg bg-stone-200 py-3 px-4 hover:bg-stone-300 text-stone-500 hover:text-stone-800 transition-all"
-                    href="https://www.youtube.com/watch?v=gW2LtX1217s&t=93s"
-                  >
-                    I like it!
-                  </a>
+                <div className="flex flex-row justify-end items-center space-x-4 mt-3">
+                  {creator ? (
+                    <Link
+                      to={`/user/${creator.id}`}
+                      className="text-stone-400 py-1 hover:text-stone-600 px-1.5"
+                    >
+                      <i className="fas fa-user mr-2"></i>
+                      {creator?.name}
+                    </Link>
+                  ) : (
+                    <i className="fal fa-wrench animate-spin text-lg"></i>
+                  )}
+                  {/* <button className="button-secondary">I like it!</button> */}
                 </div>
               </div>
             </div>
@@ -189,6 +177,45 @@ export const IndexPage = () => {
       )}
     </div>
   );
+};
+
+const Map = ({ list, setSelectedPlaceId }: TMapParams) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!list?.places || list.places.length === 0) {
+      map.setView({ lat: 52, lng: -0.2 }, 7);
+      return;
+    }
+
+    const place = list.places[0];
+    map.setView({ lat: place.lat, lng: place.lon }, 7);
+  }, [list?.places]);
+
+  return (
+    <>
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+      {list?.places.map((place: TPlace) => (
+        <Marker
+          key={place.id}
+          position={{ lat: place.lat, lng: place.lon }}
+          eventHandlers={{
+            click: () => {
+              setSelectedPlaceId(place.id);
+            },
+          }}
+        />
+      ))}
+    </>
+  );
+};
+
+type TMapParams = {
+  list?: TList;
+  setSelectedPlaceId: (x: number) => void;
 };
 
 type TParams = {

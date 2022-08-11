@@ -7,11 +7,12 @@ import {
 } from "@tanstack/react-query";
 import { API } from "./consts/api";
 import { SignInPage } from "./pages/sign-in";
-import { AddListPage } from "./pages/add-list";
+import { AddListPage } from "./pages/list/add-list";
 import React, { useEffect } from "react";
 import { useUserStore } from "./store/UserStore";
 import { useInterfaceStore } from "./store/InterfaceStore";
 import { ScreenLoader } from "./components/ScreenLoader";
+import { UserPage } from "./pages/user";
 
 const queryClient = new QueryClient();
 export default function App() {
@@ -28,7 +29,8 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<IndexPage />} />
-            <Route path="/add-list" element={<AddListPage />} />
+            <Route path="/user/:userId" element={<UserPage />} />
+            <Route path="/list/add-list" element={<AddListPage />} />
             <Route path="/sign-in" element={<SignInPage />} />
           </Routes>
         </BrowserRouter>

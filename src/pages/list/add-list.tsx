@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
-import { withAuth } from "../components/withAuth";
+import { withAuth } from "../../components/withAuth";
 import { z } from "zod";
 import { borzoi } from "borzoi";
 import { useNavigate } from "react-router-dom";
+import { useInterfaceStore } from "../../store/InterfaceStore";
 
 const isUrl = (test: string) => {
   try {
@@ -47,6 +48,7 @@ const create_list_dto = z.object({
 });
 
 const Page = () => {
+  const { isLoading, setLoading } = useInterfaceStore();
   const [list, setList] = useState({
     name: "",
     description: "",
@@ -69,13 +71,14 @@ const Page = () => {
       return setErrors(validation.error);
     }
 
+    setLoading("adding-list", true);
     const { data, ok } = await borzoi(`/list`, {
       method: "post",
       credentials: "include",
       body: validation.data,
     });
+    setLoading("adding-list", false);
     if (ok && data?.data?.id) {
-      console.log(data);
       navigate(`/?listId=${data.data.id}`);
     }
   };
@@ -235,13 +238,7 @@ const Errors = ({ errors }: { errors?: z.ZodError<any> | null }) => {
   );
 };
 
-const Map = ({
-  places,
-  setPlaces,
-}: {
-  places: TPlace[];
-  setPlaces: Function;
-}) => {
+const Map = ({ places, setPlaces }: TMapProps) => {
   const map = useMapEvents({
     click(e) {
       setPlaces((x: TPlace[]) => [
@@ -272,6 +269,11 @@ const Map = ({
       ))}
     </>
   );
+};
+
+type TMapProps = {
+  places: TPlace[];
+  setPlaces: Function;
 };
 
 export const AddListPage = withAuth(Page);

@@ -7,16 +7,24 @@ import { useNavigate } from "react-router-dom";
 import { useInterfaceStore } from "../../store/InterfaceStore";
 import { create_list_dto } from "common/dtos/list";
 import { ErrorCode } from "common/errorCodes";
+import { Backdrop } from "../../components/Backdrop/Backdrop";
+import { edit_place_dto } from "common/dtos/place";
+import { Card } from "../../components/Card";
+import { AnimatePresence, motion } from "framer-motion";
 
 const Page = () => {
-  const { isLoading, setLoading } = useInterfaceStore();
+  const { setLoading } = useInterfaceStore();
   const [list, setList] = useState({
     name: "",
     description: "",
     thumbnail: "",
   });
-  const [places, setPlaces] = useState<TPlace[]>([]);
+  const [places, setPlaces] = useState<Partial<TPlace>[]>([]);
   const [errors, setErrors] = useState<z.ZodIssue[]>([]);
+  const [temporaryErrors, setTemporaryErrors] = useState<z.ZodIssue[]>([]);
+  const [temporaryPlace, setTemporaryPlace] = useState<Partial<TPlace> | null>(
+    null
+  );
   const navigate = useNavigate();
 
   const handleSubmit = async () => {
@@ -49,23 +57,40 @@ const Page = () => {
     }
   };
 
-  const onPlaceChange =
-    (i: number) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      setPlaces((x) =>
-        x.map((y, j) =>
-          j === i ? { ...y, [e.target.name]: e.target.value } : y
-        )
-      );
-    };
+  useEffect(() => {
+    setTemporaryErrors([]);
+  }, [temporaryPlace]);
+
+  const editPlace = (place: Partial<TPlace>) => {
+    setTemporaryPlace(place);
+  };
+
+  const addPlace = async () => {
+    setTemporaryErrors([]);
+    if (!temporaryPlace) return;
+
+    const validation = await edit_place_dto.safeParseAsync(temporaryPlace);
+    if (!validation.success) {
+      return setTemporaryErrors(validation.error.issues);
+    }
+
+    setPlaces((x) => [...x, temporaryPlace]);
+    setTemporaryPlace(null);
+  };
+
+  const onTemporaryChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setTemporaryPlace((x) => ({ ...x, [e.target.name]: e.target.value }));
+  };
 
   return (
     <div className="bg-stone-100 min-h-full">
       <div className="w-full h-full  mt-0 pt-4">
         <div className="max-w-[600px] py-3 mx-auto px-4">
-          <header className="text-2xl font-medium mb-3">Terrace</header>
+          <header className="text-2xl font-medium mb-5">Terrace</header>
           <div className="shadow-md border rounded-xl bg-white px-4 py-3">
-            <div className="font-medium text-lg mb-2">Add a list</div>
+            <div className="font-medium text-lg mb-2">Create a list</div>
             <div className="flex flex-col space-y-2">
               <input
                 value={list.name}
@@ -101,83 +126,147 @@ const Page = () => {
         </div>
         <div className="my-5">
           <div className="text-center text-stone-500 test-sm py-2">
-            Click a map to add a place!
+            Click a map to add a place!{" "}
           </div>
-          <MapContainer className="w-full h-[700px]" center={[52, 0]} zoom={7}>
-            <TileLayer
-              eventHandlers={{
-                click: () => {
-                  console.log("lcick");
-                },
-              }}
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            <Map places={places} setPlaces={setPlaces} />
-          </MapContainer>
+          <div className="relative overflow-hidden">
+            <AnimatePresence>
+              {temporaryPlace && (
+                <div className="!z-[999999] absolute top-0 left-0 p-4 w-full pointer-events-none">
+                  <motion.div
+                    initial={{ opacity: 0, x: "400px" }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: "400px" }}
+                    transition={{ ease: "easeInOut", duration: 0.5 }}
+                    className=" mx-auto w-full max-w-[1800px] flex flex-row justify-end"
+                  >
+                    <Card className="w-full max-w-[550px] pointer-events-auto">
+                      <h2 className="text-xl font-medium mb-5">
+                        Add a place to your list
+                      </h2>
+                      <div className="flex flex-col space-y-3">
+                        {temporaryErrors && temporaryErrors.length > 0 && (
+                          <div className="shadow-md rounded-lg px-4 py-3 bg-red-100 border-[3px] border-red-500">
+                            <header className="text-lg font-medium text-red-800">
+                              Your form contains some errors
+                            </header>
+                            <ul className="text-red-700">
+                              {temporaryErrors.map((issue, x) => (
+                                <li key={x}>
+                                  <span className="capitalize">
+                                    {issue.path.join("-")}:{" "}
+                                  </span>
+                                  <span>{issue.message}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        <input
+                          name="name"
+                          value={temporaryPlace.name || ""}
+                          onChange={onTemporaryChange}
+                          type="text"
+                          placeholder="Name"
+                          className="input-primary"
+                        />
+                        <input
+                          name="thumbnail"
+                          value={temporaryPlace.thumbnail || ""}
+                          onChange={onTemporaryChange}
+                          placeholder="Thumbnail URL"
+                          className="input-primary"
+                        />
+
+                        <textarea
+                          value={temporaryPlace.description || ""}
+                          onChange={onTemporaryChange}
+                          name="description"
+                          placeholder="Description"
+                          className="input-primary"
+                        />
+                        <div className="flex flex-row justify-end space-x-3 mt-2">
+                          <button
+                            onClick={() => setTemporaryPlace(null)}
+                            className="button-secondary"
+                          >
+                            Discard
+                          </button>
+                          <button
+                            onClick={addPlace}
+                            className="button-primary min-w-[150px] !justify-center"
+                          >
+                            Accept
+                          </button>
+                        </div>
+                      </div>
+                    </Card>
+                  </motion.div>
+                </div>
+              )}
+            </AnimatePresence>
+            <MapContainer
+              className="w-full h-[500px] md:h-[700px]"
+              center={[52, 0]}
+              zoom={7}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              <Map
+                places={places}
+                createPlace={editPlace}
+                setPlaces={setPlaces}
+                temporaryPlace={temporaryPlace}
+                setTemporaryPlace={setTemporaryPlace}
+              />
+            </MapContainer>
+          </div>
         </div>
-        <div className="flex flex-col space-y-2 max-w-[600px] py-3 mx-auto px-4">
+        <div className="flex flex-col space-y-2 max-w-[600px] py-3 mx-auto px-4 pb-20">
+          <Errors errors={errors} />
           {places.map((place, i) => (
             <div
               key={i}
-              className="shadow-md border rounded-xl px-4 py-3 bg-white"
+              className="shadow-md flex flex-row border rounded-xl space-x-3 px-4 py-3 bg-white"
             >
-              <div className="font-medium text-lg mb-2">Name a place</div>
-              <div className="flex flex-col space-y-2">
-                <input
-                  name="name"
-                  type="text"
-                  value={places[i].name || ""}
-                  onChange={onPlaceChange(i)}
-                  placeholder="Name"
-                  className="py-2 px-3 rounded-md border w-full bg-stone-100 focus:ring-2 outline-none focus:ring-stone-300 focus:bg-white transition-all"
+              {place.thumbnail && (
+                <img
+                  className="h-32 w-32 rounded-lg object-cover"
+                  src={place.thumbnail}
+                  alt=""
                 />
-                <input
-                  name="thumbnail"
-                  value={places[i].thumbnail || ""}
-                  onChange={onPlaceChange(i)}
-                  type="url"
-                  placeholder="Thumbnail URL"
-                  className="py-2 px-3 rounded-md border w-full bg-stone-100 focus:ring-2 outline-none focus:ring-stone-300 focus:bg-white transition-all"
-                />
-                <input
-                  value={places[i].banner || ""}
-                  onChange={onPlaceChange(i)}
-                  name="banner"
-                  type="url"
-                  placeholder="Banner URL"
-                  className="py-2 px-3 rounded-md border w-full bg-stone-100 focus:ring-2 outline-none focus:ring-stone-300 focus:bg-white transition-all"
-                />
-                <textarea
-                  name="description"
-                  value={places[i].description || ""}
-                  onChange={onPlaceChange(i)}
-                  placeholder="Description"
-                  className="py-2 px-3 rounded-md border w-full bg-stone-100 focus:ring-2 outline-none focus:ring-stone-300 focus:bg-white transition-all"
-                />
+              )}
+              <div className="flex-grow">
+                <header className="text-lg font-medium">{place.name}</header>
+                <div className="mb-2">{place.description}</div>
+                <span className="text-sm text-stone-600">
+                  <i className="far fa-location dot mr-0.5"></i> {place.lat},{" "}
+                  {place.lon}
+                </span>
+
                 <div className="flex flex-row justify-end mt-2">
                   <button
-                    onClick={() =>
-                      setPlaces((x) => x.filter((_, j) => i !== j))
-                    }
-                    className="w-max bg-stone-100 px-4 py-2 text-stone-600 text-center transition-all hover:bg-stone-200 hover:text-stone-800 rounded-lg"
+                    onClick={() => {
+                      setTemporaryPlace(place);
+                      setPlaces((x) => x.filter((_, j) => i !== j));
+                    }}
+                    className="button-secondary"
                   >
-                    Remove
+                    Edit
                   </button>
                 </div>
               </div>
             </div>
           ))}
-          <Errors errors={errors} />
-          {places.length > 0 && (
-            <div className="shadow-md border rounded-xl bg-white flex flex-row justify-end py-3 px-4">
-              <button
-                onClick={handleSubmit}
-                className="w-max bg-stone-100 px-4 py-2 text-stone-600 text-center transition-all hover:bg-stone-200 hover:text-stone-800 rounded-lg"
-              >
-                Submit
-              </button>
-            </div>
+
+          {places.length >= 2 && (
+            <button
+              onClick={handleSubmit}
+              className="button-primary justify-center "
+            >
+              Submit
+            </button>
           )}
         </div>
       </div>
@@ -188,14 +277,14 @@ const Page = () => {
 const Errors = ({ errors }: { errors?: z.ZodIssue[] | null }) => {
   if (!errors || errors.length === 0) return null;
   return (
-    <div className="shadow-md border rounded-xl px-4 py-3 bg-red-100">
-      <header className="text-lg font-medium">Form contains some errors</header>
-      <ul>
+    <div className="shadow-md rounded-xl px-4 py-3 bg-red-100 border-[3px] border-red-500">
+      <header className="text-lg font-medium text-red-800">
+        Your form contains some errors
+      </header>
+      <ul className="text-red-700">
         {errors.map((issue, x) => (
           <li key={x}>
-            <span className="font-medium capitalize">
-              {issue.path.join("=>")}:{" "}
-            </span>
+            <span className="font-medium">{issue.path.join("=>")}: </span>
             <span>{issue.message}</span>
           </li>
         ))}
@@ -204,18 +293,22 @@ const Errors = ({ errors }: { errors?: z.ZodIssue[] | null }) => {
   );
 };
 
-const Map = ({ places, setPlaces }: TMapProps) => {
+const Map = ({
+  places,
+  createPlace,
+  setPlaces,
+  temporaryPlace,
+  setTemporaryPlace,
+}: TMapProps) => {
   const map = useMapEvents({
     click(e) {
-      setPlaces((x: TPlace[]) => [
-        ...x,
-        {
-          name: "",
-          lat: e.latlng.lat,
-          lon: e.latlng.lng,
-          description: "",
-        },
-      ]);
+      createPlace({
+        name: temporaryPlace?.name || "",
+        description: temporaryPlace?.description || "",
+        thumbnail: temporaryPlace?.thumbnail || "",
+        lat: e.latlng.lat,
+        lon: e.latlng.lng,
+      });
     },
   });
 
@@ -223,23 +316,35 @@ const Map = ({ places, setPlaces }: TMapProps) => {
     <>
       {places.map((place, i) => (
         <Marker
-          position={{ lat: place.lat, lng: place.lon }}
+          position={{ lat: place.lat!, lng: place.lon! }}
           key={i}
+          opacity={(temporaryPlace ? "50%" : "100%") as unknown as number}
           title={place.name}
           eventHandlers={{
             click: () => {
+              if (temporaryPlace) return;
+              console.log("hrer");
+              setTemporaryPlace(place);
               setPlaces((x: TPlace[]) => x.filter((_: any, j: any) => i !== j));
             },
           }}
         />
       ))}
+      {temporaryPlace && (
+        <Marker
+          position={{ lat: temporaryPlace.lat!, lng: temporaryPlace.lon! }}
+        />
+      )}
     </>
   );
 };
 
 type TMapProps = {
-  places: TPlace[];
+  places: Partial<TPlace>[];
+  createPlace: Function;
   setPlaces: Function;
+  temporaryPlace: Partial<TPlace> | null;
+  setTemporaryPlace: Function;
 };
 
 export const AddListPage = withAuth(Page);

@@ -1,0 +1,4 @@
+.wrapper {
+  z-index: 999999;
+  @apply fixed w-full h-full top-0 left-0 bg-white bg-opacity-40 overflow-auto grid place-items-center;
+}

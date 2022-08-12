@@ -27,12 +27,11 @@ const fetchListsByUser = async (userId?: string, cursor?: number) => {
   const { data, ok } = await borzoi(`/list/user/${userId}`, {
     query: {
       cursor,
-      take: 2,
+      take: 32,
     },
   });
-  console.log(data);
   if (ok && data.data) {
-    return data.data;
+    return data;
   }
 
   throw new Error();
@@ -55,7 +54,12 @@ export const UserPage = () => {
       },
     }
   );
-  const { data: lists, isLoading: isListsLoading } = useInfiniteQuery(
+  const {
+    data: lists,
+    isLoading: isListsLoading,
+    hasNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery(
     [`user/${user?.id}/lists`],
     ({ pageParam = 1 }) => fetchListsByUser(user?.id, pageParam),
     {
@@ -89,15 +93,13 @@ export const UserPage = () => {
                 </div>
               </div>
               <div className="mt-8">
-                {!isListsLoading ? (
-                  <>
-                    <Card>
-                      <h2 className="font-medium text-lg">
-                        {user.name}'s lists
-                      </h2>
+                <Card>
+                  <h2 className="font-medium text-lg">{user.name}'s lists</h2>
+                  {!isListsLoading ? (
+                    <>
                       <div className="w-full flex flex-col divide-y mt-3">
                         {lists?.pages.map((page, x) =>
-                          page.map((list: TList) => (
+                          page.data.map((list: TList) => (
                             <Link
                               to={`/?listId=${list.id}`}
                               key={`${x}-${list.id}`}
@@ -108,16 +110,23 @@ export const UserPage = () => {
                           ))
                         )}
                       </div>
-                      <div className="flex justify-center mt-5">
-                        <button className="button-secondary">Load more</button>
-                      </div>
-                    </Card>
-                  </>
-                ) : (
-                  <div className="flex flex-row justify-center mt-3">
-                    <i className="fal fa-wrench animate-spin text-2xl"></i>
-                  </div>
-                )}
+                      {hasNextPage && (
+                        <div className="flex justify-center mt-5">
+                          <button
+                            onClick={() => fetchNextPage()}
+                            className="button-secondary"
+                          >
+                            Load more
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="flex flex-row justify-center mt-3">
+                      <i className="fal fa-wrench animate-spin text-2xl"></i>
+                    </div>
+                  )}
+                </Card>
               </div>
               {/* <div>{JSON.stringify(lists?.pages[0])}</div> */}
             </div>

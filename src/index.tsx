@@ -1,18 +1,14 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { IndexPage } from "./pages";
-import {
-  QueryClient,
-  QueryClientProvider,
-  useQuery,
-} from "@tanstack/react-query";
-import { API } from "./consts/api";
-import { SignInPage } from "./pages/sign-in";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AddListPage } from "./pages/list/add-list";
 import React, { useEffect } from "react";
 import { useUserStore } from "./store/UserStore";
 import { useInterfaceStore } from "./store/InterfaceStore";
 import { ScreenLoader } from "./components/ScreenLoader";
 import { UserPage } from "./pages/user";
+import { NotFoundPage } from "./components/NotFound";
+import { SignInPage } from "./pages/sign-in";
 
 const queryClient = new QueryClient();
 export default function App() {
@@ -32,6 +28,7 @@ export default function App() {
             <Route path="/user/:userId" element={<UserPage />} />
             <Route path="/list/add-list" element={<AddListPage />} />
             <Route path="/sign-in" element={<SignInPage />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </BrowserRouter>
       </QueryClientProvider>

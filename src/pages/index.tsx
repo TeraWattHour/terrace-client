@@ -85,56 +85,52 @@ export const IndexPage = () => {
               >
                 <i className="fal fa-close text-2xl "></i>
               </button>
-              <div
-                className={classes(
-                  selectedPlace.banner ? "bg-opacity-60" : "",
-                  "bg-white rounded-lg"
+
+              <div className="flex flex-row space-x-4">
+                {selectedPlace.thumbnail && (
+                  <img
+                    src={selectedPlace.thumbnail}
+                    className="w-32 rounded-lg h-32 flex-shrink-0 object-cover"
+                    alt=""
+                  />
                 )}
-              >
-                <div className="flex flex-row space-x-4">
-                  {selectedPlace.thumbnail && (
-                    <img
-                      src={selectedPlace.thumbnail}
-                      className="w-32 rounded-lg h-32 flex-shrink-0"
-                      alt=""
-                    />
-                  )}
-                  <div className="flex-grow flex flex-col justify-between">
-                    <div>
-                      <header className="text-xl font-medium pb-1.5">
-                        {selectedPlace.name}
-                      </header>
-                      <div className="pb-4">{selectedPlace.description}</div>
-                    </div>
-                    <Tippy
-                      hideOnClick={false}
-                      content={
-                        <div>
-                          {!isCopied
-                            ? "Click me to copy!"
-                            : "Copied to clipboard!"}
-                        </div>
-                      }
-                    >
-                      <div
-                        onMouseLeave={() =>
-                          setTimeout(() => {
-                            setIsCopied(false);
-                          }, 2000)
-                        }
-                        onClick={() => {
-                          setIsCopied(true);
-                          navigator.clipboard.writeText(
-                            `${selectedPlace.lat}, ${selectedPlace.lon}`
-                          );
-                        }}
-                        className="text-xs cursor-pointer"
-                      >
-                        <i className="fal fa-location-dot mr-2"></i>
-                        {selectedPlace.lat}, {selectedPlace.lon}
-                      </div>
-                    </Tippy>
+                <div className="flex-grow flex flex-col justify-between">
+                  <div>
+                    <header className="text-xl font-medium">
+                      {selectedPlace.name}
+                    </header>
+                    <p className="pb-4 !leading-normal">
+                      {selectedPlace.description}
+                    </p>
                   </div>
+                  <Tippy
+                    hideOnClick={false}
+                    content={
+                      <div>
+                        {!isCopied
+                          ? "Click me to copy!"
+                          : "Copied to clipboard!"}
+                      </div>
+                    }
+                  >
+                    <div
+                      onMouseLeave={() =>
+                        setTimeout(() => {
+                          setIsCopied(false);
+                        }, 2000)
+                      }
+                      onClick={() => {
+                        setIsCopied(true);
+                        navigator.clipboard.writeText(
+                          `${selectedPlace.lat}, ${selectedPlace.lon}`
+                        );
+                      }}
+                      className="text-xs cursor-pointer"
+                    >
+                      <i className="fal fa-location-dot mr-2"></i>
+                      {selectedPlace.lat}, {selectedPlace.lon}
+                    </div>
+                  </Tippy>
                 </div>
               </div>
             </Card>
@@ -144,16 +140,14 @@ export const IndexPage = () => {
               {list.thumbnail && (
                 <img
                   src={list.thumbnail}
-                  className="w-32 rounded-lg h-32 flex-shrink-0"
+                  className="w-32 rounded-lg h-32 flex-shrink-0 object-cover"
                   alt=""
                 />
               )}
               <div className="flex flex-col justify-between flex-grow">
                 <div>
-                  <header className="text-xl font-medium pb-1.5">
-                    {list.name}
-                  </header>
-                  <p className="pb-2">{list.description}</p>
+                  <header className="text-xl font-medium">{list.name}</header>
+                  <p className="pb-2 !leading-normal">{list.description}</p>
                   <div className="mt-2 text-sm"></div>
                 </div>
                 <div className="flex flex-row justify-end items-center space-x-4 mt-3">

@@ -5,47 +5,8 @@ import { z } from "zod";
 import { borzoi } from "borzoi";
 import { useNavigate } from "react-router-dom";
 import { useInterfaceStore } from "../../store/InterfaceStore";
-
-const isUrl = (test: string) => {
-  try {
-    new URL(test);
-    // naive af
-    const ext = test.split(".")[test.split(".").length - 1];
-    const allowed = ["png", "jpg", "jpeg", "webp"];
-    if (!allowed.includes(ext)) return false;
-    if (!test.endsWith("")) return true;
-  } catch (e) {
-    return false;
-  }
-};
-
-const create_list_dto = z.object({
-  name: z.string().min(4).max(48),
-  description: z.string().min(4).max(255),
-  thumbnail: z
-    .string()
-    .refine((x) => x?.length === 0 || isUrl(x))
-    .optional(),
-  places: z
-    .array(
-      z.object({
-        name: z.string().min(4).max(48),
-        description: z.string().min(4).max(255),
-        thumbnail: z
-          .string()
-          .refine((x) => x?.length === 0 || isUrl(x))
-          .optional(),
-        banner: z
-          .string()
-          .refine((x) => x?.length === 0 || isUrl(x))
-          .optional(),
-        lat: z.number().min(-90).max(90),
-        lon: z.number().min(-180).max(180),
-      })
-    )
-    .min(2)
-    .max(100),
-});
+import { create_list_dto } from "common/dtos/list";
+import { ErrorCode } from "common/errorCodes";
 
 const Page = () => {
   const { isLoading, setLoading } = useInterfaceStore();
@@ -80,6 +41,13 @@ const Page = () => {
     setLoading("adding-list", false);
     if (ok && data?.data?.id) {
       navigate(`/?listId=${data.data.id}`);
+    }
+    if (!ok && data?.errors) {
+      const serverErrs = data.errors;
+      const isZodErrors = serverErrs[0].code === ErrorCode.VALIDATION;
+      if (isZodErrors) {
+        setErrors(serverErrs[0].data);
+      }
     }
   };
 
@@ -161,21 +129,21 @@ const Page = () => {
                 <input
                   name="name"
                   type="text"
-                  value={places[i].name}
+                  value={places[i].name || ""}
                   onChange={onPlaceChange(i)}
                   placeholder="Name"
                   className="py-2 px-3 rounded-md border w-full bg-stone-100 focus:ring-2 outline-none focus:ring-stone-300 focus:bg-white transition-all"
                 />
                 <input
                   name="thumbnail"
-                  value={places[i].thumbnail}
+                  value={places[i].thumbnail || ""}
                   onChange={onPlaceChange(i)}
                   type="url"
                   placeholder="Thumbnail URL"
                   className="py-2 px-3 rounded-md border w-full bg-stone-100 focus:ring-2 outline-none focus:ring-stone-300 focus:bg-white transition-all"
                 />
                 <input
-                  value={places[i].banner}
+                  value={places[i].banner || ""}
                   onChange={onPlaceChange(i)}
                   name="banner"
                   type="url"
@@ -184,7 +152,7 @@ const Page = () => {
                 />
                 <textarea
                   name="description"
-                  value={places[i].description}
+                  value={places[i].description || ""}
                   onChange={onPlaceChange(i)}
                   placeholder="Description"
                   className="py-2 px-3 rounded-md border w-full bg-stone-100 focus:ring-2 outline-none focus:ring-stone-300 focus:bg-white transition-all"

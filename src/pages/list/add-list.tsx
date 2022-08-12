@@ -16,20 +16,18 @@ const Page = () => {
     thumbnail: "",
   });
   const [places, setPlaces] = useState<TPlace[]>([]);
-  const [errors, setErrors] = useState<z.ZodError<any> | null>(null);
+  const [errors, setErrors] = useState<z.ZodIssue[]>([]);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    setErrors(null);
-  }, [places, list]);
-
   const handleSubmit = async () => {
+    setErrors([]);
+
     const validation = await create_list_dto.safeParseAsync({
       ...list,
       places,
     });
     if (!validation.success) {
-      return setErrors(validation.error);
+      return setErrors(validation.error.issues);
     }
 
     setLoading("adding-list", true);
@@ -42,7 +40,7 @@ const Page = () => {
     if (ok && data?.data?.id) {
       navigate(`/?listId=${data.data.id}`);
     }
-    if (!ok && data?.errors) {
+    if (data?.errors) {
       const serverErrs = data.errors;
       const isZodErrors = serverErrs[0].code === ErrorCode.VALIDATION;
       if (isZodErrors) {
@@ -187,13 +185,13 @@ const Page = () => {
   );
 };
 
-const Errors = ({ errors }: { errors?: z.ZodError<any> | null }) => {
-  if (!errors?.issues || errors.issues.length === 0) return null;
+const Errors = ({ errors }: { errors?: z.ZodIssue[] | null }) => {
+  if (!errors || errors.length === 0) return null;
   return (
     <div className="shadow-md border rounded-xl px-4 py-3 bg-red-100">
       <header className="text-lg font-medium">Form contains some errors</header>
       <ul>
-        {errors?.issues.map((issue, x) => (
+        {errors.map((issue, x) => (
           <li key={x}>
             <span className="font-medium capitalize">
               {issue.path.join("=>")}:{" "}
